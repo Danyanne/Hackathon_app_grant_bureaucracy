@@ -1,74 +1,76 @@
-from uagents import Agent, Context, Model
-import pandas as pd
-import requests
-from pathlib import Path
-from openai import OpenAI
-from models import TaskRequest, WorkerResponse
+"""
+data_worker.py — Expense data analyst worker agent.
 
-llm = OpenAI(
-    base_url="https://api.venice.ai/api/v1",
-    api_key="VENICE_INFERENCE_KEY_-ZMGJZ9LK-Gnw-yh-BCecTz6UVBRzGkkrLx6npnF7K",
+Reads the ERC expense spreadsheet and answers financial questions:
+totals, per-category breakdowns, specific transaction lookups.
+"""
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from uagents import Agent, Context
+from openai import OpenAI
+
+from models import TaskRequest, WorkerResponse
+from config import (
+    VENICE_API_KEY, VENICE_BASE_URL, VENICE_MODEL,
+    AGENT_SEEDS, AGENT_PORTS, KNOWLEDGE_BASE,
 )
 
-# Communication Contract
-class DataLogQuery(Model):
-    task_type: str  # 'progress_report' or 'expense_audit'
+llm = OpenAI(base_url=VENICE_BASE_URL, api_key=VENICE_API_KEY)
 
-class DataLogResponse(Model):
-    content: str
+EXCEL_PATH = KNOWLEDGE_BASE / "erc_solar_physics_expenses.xlsx"
 
 data_worker = Agent(
     name="DataWorker",
-    port=8002,
-    seed="data_worker_secret_seed_phrase_2026",
-    endpoint=["http://127.0.0.1:8002/submit"],
-    mailbox="YOUR_DATA_WORKER_MAILBOX_KEY",
-    network="testnet"
+    port=AGENT_PORTS["data_worker"],
+    seed=AGENT_SEEDS["data_worker"],
+    endpoint=[f"http://127.0.0.1:{AGENT_PORTS['data_worker']}/submit"],
+    mailbox=True,
 )
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-EXCEL_PATH = PROJECT_ROOT / "knowledge_base" / "erc_solar_physics_expenses.xlsx"
 
 @data_worker.on_message(model=TaskRequest)
 async def handle_query(ctx: Context, sender: str, msg: TaskRequest):
-    # Orchestrator already decided this query belongs to data_worker.
-    # Default to expense_audit; only override for explicit GitHub/progress queries.
-    if "commit" in msg.query.lower() or "progress" in msg.query.lower():
-        task_type = "progress_report"
-    else:
-        task_type = "expense_audit"
+    ctx.logger.info(f"[data_worker] query: {msg.query[:60]}…")
 
-    ctx.logger.info(f"Processing {task_type}...")
+    if not EXCEL_PATH.exists():
+        await ctx.send(sender, WorkerResponse(
+            request_id=msg.id,
+            data="⚠️ Expense spreadsheet not found in knowledge_base/.",
+        ))
+        return
 
-    # Logic for Expense Audit — pass all data to LLM, let it answer naturally
-    if task_type == "expense_audit":
-        df = pd.read_excel(EXCEL_PATH)
+    try:
+        import pandas as pd
+        df       = pd.read_excel(EXCEL_PATH)
         data_str = df.to_string(index=False)
-        result = llm.chat.completions.create(
-            model="llama-3.3-70b",
-            max_tokens=512,
+    except Exception as e:
+        await ctx.send(sender, WorkerResponse(
+            request_id=msg.id,
+            data=f"⚠️ Could not read expense spreadsheet: {e}",
+        ))
+        return
+
+    try:
+        _r = llm.chat.completions.create(
+            model=VENICE_MODEL,
+            max_tokens=1000,
             messages=[
                 {"role": "system", "content": (
-                    "You are a data analyst. Answer the user's question based solely on the "
-                    "expense records below. Be specific, concise, and reference exact values "
-                    "from the data.\n\nEXPENSE RECORDS:\n" + data_str
+                    "You are a financial data analyst. Answer the user's question based solely "
+                    "on the expense records below. Be specific and reference exact values.\n\n"
+                    f"EXPENSE RECORDS:\n{data_str}"
                 )},
-                {"role": "user", "content": msg.query}
-            ]
+                {"role": "user", "content": msg.query},
+            ],
         )
-        response = result.choices[0].message.content
+        result = (_r.choices[0].message.content or "").strip()
+    except Exception as e:
+        result = f"⚠️ Data worker LLM error: {e}"
 
-    # Logic for Progress Report (GitHub API)
-    elif task_type == "progress_report":
-        # Replace with your actual repo details
-        resp = requests.get("https://api.github.com/repos/YOUR_ORG/YOUR_REPO/commits")
-        commits = [c['commit']['message'] for c in resp.json()[:5]]
-        response = f"Recent development progress:\n- " + "\n- ".join(commits)
+    await ctx.send(sender, WorkerResponse(request_id=msg.id, data=result))
 
-    else:
-        response = "I can only look up expense records or GitHub progress reports. For questions about policy documents, please ask the compliance oracle."
-
-    await ctx.send(sender, WorkerResponse(request_id = msg.id, data=response))
 
 if __name__ == "__main__":
     data_worker.run()

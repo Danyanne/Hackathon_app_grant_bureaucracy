@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# run_chat.sh — Start the full 6-agent swarm and open an interactive CLI chat.
 set -e
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -20,56 +21,60 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-# Kill any stale instances from previous runs
-pkill -f "python3.*agents/orchestrator.py"   2>/dev/null || true
-pkill -f "python3.*agents/compliance_rag.py" 2>/dev/null || true
-pkill -f "python3.*agents/data_worker.py"    2>/dev/null || true
-pkill -f "python3.*agents/report_writer.py"  2>/dev/null || true
-pkill -f "python3.*agents/trigger_swarm.py"  2>/dev/null || true
-pkill -f "python3.*agents/chat.py"           2>/dev/null || true
+# Kill any stale instances
+pkill -f "python3.*agents/orchestrator.py"      2>/dev/null || true
+pkill -f "python3.*agents/compliance_rag.py"    2>/dev/null || true
+pkill -f "python3.*agents/data_worker.py"       2>/dev/null || true
+pkill -f "python3.*agents/report_writer.py"     2>/dev/null || true
+pkill -f "python3.*agents/email_drafter.py"     2>/dev/null || true
+pkill -f "python3.*agents/budget_forecaster.py" 2>/dev/null || true
+pkill -f "python3.*agents/chat.py"              2>/dev/null || true
 sleep 1
 
-# Start the 4 server agents silently — logs go to files only
-python3 -u agents/orchestrator.py   > "$LOG_DIR/orchestrator.log"   2>&1 & agent_pids+=($!)
-python3 -u agents/compliance_rag.py > "$LOG_DIR/compliance_rag.log" 2>&1 & agent_pids+=($!)
-python3 -u agents/data_worker.py    > "$LOG_DIR/data_worker.log"    2>&1 & agent_pids+=($!)
-python3 -u agents/report_writer.py  > "$LOG_DIR/report_writer.log"  2>&1 & agent_pids+=($!)
+python3 -u agents/orchestrator.py      > "$LOG_DIR/orchestrator.log"      2>&1 & agent_pids+=($!)
+python3 -u agents/compliance_rag.py    > "$LOG_DIR/compliance.log"         2>&1 & agent_pids+=($!)
+python3 -u agents/data_worker.py       > "$LOG_DIR/data_worker.log"        2>&1 & agent_pids+=($!)
+python3 -u agents/report_writer.py     > "$LOG_DIR/report_writer.log"      2>&1 & agent_pids+=($!)
+python3 -u agents/email_drafter.py     > "$LOG_DIR/email_drafter.log"      2>&1 & agent_pids+=($!)
+python3 -u agents/budget_forecaster.py > "$LOG_DIR/budget_forecaster.log"  2>&1 & agent_pids+=($!)
 
-# Poll each agent's log until it registers or times out
+AGENTS=(orchestrator compliance data_worker report_writer email_drafter budget_forecaster)
+declare -A LOG_MAP=(
+    [orchestrator]="orchestrator.log"
+    [compliance]="compliance.log"
+    [data_worker]="data_worker.log"
+    [report_writer]="report_writer.log"
+    [email_drafter]="email_drafter.log"
+    [budget_forecaster]="budget_forecaster.log"
+)
+
 declare -A SEEN
 READY=0
-TIMEOUT=30
+TIMEOUT=40
 ELAPSED=0
 
-echo ""
-echo "Starting agents..."
+echo "Starting 6-agent swarm..."
 
-while [ $ELAPSED -lt $TIMEOUT ] && [ $READY -lt 4 ]; do
-    sleep 0.5
+while [ $ELAPSED -lt $TIMEOUT ] && [ $READY -lt 6 ]; do
+    sleep 1
     ELAPSED=$((ELAPSED + 1))
-
-    for agent in orchestrator compliance_rag data_worker report_writer; do
+    for agent in "${AGENTS[@]}"; do
         [ -n "${SEEN[$agent]}" ] && continue
-        log="$LOG_DIR/$agent.log"
-
-        if grep -q "Agent registration status updated to active" "$log" 2>/dev/null; then
-            echo "  ✓  $agent is online"
+        log="$LOG_DIR/${LOG_MAP[$agent]}"
+        if grep -q "Agent registration status updated to active\|Starting mailbox client" "$log" 2>/dev/null; then
+            echo "  ✓  $agent online"
             SEEN[$agent]=1
             READY=$((READY + 1))
         elif grep -q "^ERROR\|address already in use" "$log" 2>/dev/null; then
-            echo "  ✗  $agent failed to start — check logs/$agent.log"
+            echo "  ✗  $agent failed — check logs/${LOG_MAP[$agent]}"
             SEEN[$agent]=1
         fi
     done
 done
 
-if [ $READY -lt 4 ]; then
-    echo ""
-    echo "  ⚠  Not all agents came online within ${TIMEOUT}s."
-    echo "     Check the logs/ directory for details."
-fi
-
+echo ""
+[ $READY -lt 6 ] && echo "  ⚠  Only $READY/6 agents came online within ${TIMEOUT}s — check logs/"
+echo "Opening chat..."
 echo ""
 
-# Run the interactive chat in the foreground
 python3 agents/chat.py

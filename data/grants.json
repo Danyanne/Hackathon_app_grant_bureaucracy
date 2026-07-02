@@ -1,0 +1,99 @@
+{
+  "grants": [
+    {
+      "id": "ERC-2026-STG-SOLARML",
+      "title": "Solar Magnetic Field Dynamics and Eruption Triggering",
+      "funder": "European Research Council",
+      "type": "ERC Starting Grant",
+      "start_date": "2025-11-01",
+      "end_date": "2030-10-31",
+      "total_budget_eur": 1500000,
+      "status": "active",
+      "pi": "Daniel Ctvrtecka",
+      "description": "Investigating the onset conditions and triggering mechanisms of solar coronal mass ejections using MHD simulations and multi-wavelength observations.",
+      "team": [
+        {
+          "name": "Marisol Vega", "role": "Postdoc", "joined": "2025-11-01",
+          "contract_end": "2027-10-31", "fte": 1.0,
+          "annual_salary_eur": 52000, "email": "m.vega@institute.cz",
+          "institution": "Institute for Astrophysical Research, Prague"
+        },
+        {
+          "name": "Kwame Asante", "role": "Postdoc", "joined": "2025-11-01",
+          "contract_end": "2027-04-30", "fte": 1.0,
+          "annual_salary_eur": 52000, "email": "k.asante@institute.cz",
+          "institution": "Institute for Astrophysical Research, Prague"
+        },
+        {
+          "name": "Yuki Tanaka", "role": "PhD Student", "joined": "2026-01-01",
+          "contract_end": "2029-12-31", "fte": 1.0,
+          "annual_salary_eur": 28000, "email": "y.tanaka@institute.cz",
+          "institution": "Institute for Astrophysical Research, Prague"
+        },
+        {
+          "name": "Priya Sharma", "role": "MSc Student", "joined": "2026-03-01",
+          "contract_end": "2026-09-30", "fte": 0.5,
+          "annual_salary_eur": 12000, "email": "p.sharma@institute.cz",
+          "institution": "Institute for Astrophysical Research, Prague"
+        }
+      ],
+      "publications": [],
+      "milestones": [
+        {
+          "id": "M1.1",
+          "title": "Observational dataset assembled and quality-checked",
+          "description": "SDO/AIA + HMI data for 12 X-class flares downloaded, calibrated, and archived.",
+          "work_package": "WP1",
+          "due_date": "2026-04-30",
+          "status": "completed"
+        },
+        {
+          "id": "M2.1",
+          "title": "FLUX-MHD v2.4 released and documented",
+          "description": "Code released on GitHub with full documentation and test suite.",
+          "work_package": "WP2",
+          "due_date": "2026-03-31",
+          "status": "completed"
+        },
+        {
+          "id": "M2.2",
+          "title": "Parameter-space survey (47 configurations) complete",
+          "description": "All simulation runs finished; critical twist threshold identified.",
+          "work_package": "WP2",
+          "due_date": "2026-06-30",
+          "status": "on_track"
+        },
+        {
+          "id": "M3.1",
+          "title": "Theoretical eruption model draft submitted internally",
+          "description": "First draft of analytical torus-instability model delivered to team for review.",
+          "work_package": "WP3",
+          "due_date": "2026-09-30",
+          "status": "planned"
+        },
+        {
+          "id": "M4.1",
+          "title": "First peer-reviewed paper submitted",
+          "description": "Flux rope topology paper submitted to ApJ.",
+          "work_package": "WP4",
+          "due_date": "2026-07-31",
+          "status": "at_risk"
+        },
+        {
+          "id": "M4.2",
+          "title": "ERC mid-term report submitted",
+          "description": "18-month progress report submitted to ERC.",
+          "work_package": "WP4",
+          "due_date": "2027-04-30",
+          "status": "planned"
+        }
+      ],
+      "work_packages": [
+        {"id": "WP1", "title": "Observational Data Collection",    "status": "in_progress"},
+        {"id": "WP2", "title": "MHD Flux Rope Simulations",        "status": "in_progress"},
+        {"id": "WP3", "title": "Theoretical Eruption Modelling",   "status": "planned"},
+        {"id": "WP4", "title": "Dissemination & Open Science",     "status": "in_progress"}
+      ]
+    }
+  ]
+}

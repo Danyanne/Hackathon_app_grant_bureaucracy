@@ -1,0 +1,227 @@
+\documentclass[twocolumn]{aastex631}
+
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{natbib}
+
+\shorttitle{Flux Rope Topology and CME Onset}
+\shortauthors{Vega et al.}
+
+\begin{document}
+
+\title{Topological Transitions in Solar Flux Ropes and the Onset of Coronal Mass Ejections}
+
+\author{Marisol Vega}
+\affiliation{Department of Solar Physics, Institute for Astrophysical Research, Prague}
+
+\author{Kwame Asante}
+\affiliation{Department of Solar Physics, Institute for Astrophysical Research, Prague}
+
+\author{Yuki Tanaka}
+\affiliation{Department of Solar Physics, Institute for Astrophysical Research, Prague}
+
+\author{Daniel Ctvrtecka}
+\affiliation{Department of Solar Physics, Institute for Astrophysical Research, Prague}
+\email{ctvrteckad@gmail.com}
+
+\received{2026 May 14}
+\revised{2026 June 28}
+\accepted{DRAFT}
+
+\begin{abstract}
+We present high-resolution magnetohydrodynamic (MHD) simulations of solar flux rope evolution
+leading to coronal mass ejection (CME) onset, focusing on the role of magnetic topology
+transitions in eruption triggering. Using an enhanced version of the FLUX-MHD code with
+adaptive mesh refinement (AMR) at $\Delta x = 0.01\,R_\odot$ resolution, we model 47 flux rope
+configurations spanning a range of twist numbers $\Phi \in [1.2\pi, 6.8\pi]$ and apex heights
+$h \in [0.05, 0.35]\,R_\odot$. We identify a critical twist threshold $\Phi_c = 3.5\pi \pm 0.2\pi$
+above which the torus instability develops on timescales shorter than the Alfv\'en crossing time
+of the overlying arcade. Below this threshold, flux ropes exhibit quasi-static evolution for
+$> 10\,\tau_A$ without eruption. Comparison with Solar Dynamics Observatory (SDO) AIA
+observations of 12 X-class flares from Cycle~25 shows that the simulated eruption onset heights
+agree with observed CME source heights to within $\pm 0.03\,R_\odot$. These results provide
+quantitative constraints on the torus instability index $n \geq 1.5$ as a universal eruption
+criterion and have direct implications for space weather prediction lead times.
+\end{abstract}
+
+\keywords{Sun: coronal mass ejections (CMEs) --- Sun: magnetic fields ---
+          magnetohydrodynamics (MHD) --- Sun: flares --- methods: numerical}
+
+%% ─────────────────────────────────────────────────────────────────────────────
+\section{Introduction}
+\label{sec:intro}
+
+Coronal mass ejections (CMEs) are among the most energetically significant phenomena
+in the solar system, releasing up to $10^{32}$\,erg of magnetic energy into the
+heliosphere within minutes \citep{Forbes2000}. Despite decades of observation and
+modelling, the precise physical mechanism that triggers the transition from quasi-static
+flux rope evolution to explosive eruption remains an open question \citep{Schmieder2015}.
+
+Two competing paradigms have emerged: the \textit{torus instability} \citep{Kliem2006},
+in which a toroidal current ring erupts when the overlying field decays sufficiently
+rapidly with height, and the \textit{breakout model} \citep{Antiochos1999}, in which
+magnetic reconnection above the flux rope removes the confining flux and allows
+expansion. Observational studies \citep{Zuccarello2015, Baumgartner2018} suggest both
+mechanisms can operate, but systematic quantitative comparisons with high-resolution
+MHD simulations have remained limited by computational cost.
+
+In this paper we report results from the first phase of the ERC Starting Grant
+project \textit{SolarML} (Grant No.~ERC-2026-STG-SOLARML), which aims to
+characterise the onset conditions of CMEs using MHD simulations constrained by
+multi-wavelength SDO observations. Here we focus on work package WP2 (MHD Flux
+Rope Simulations) and present parameter-space mapping of 47 flux rope configurations.
+
+%% ─────────────────────────────────────────────────────────────────────────────
+\section{Numerical Method}
+\label{sec:method}
+
+\subsection{FLUX-MHD Code}
+\label{sec:code}
+
+All simulations are performed with \textsc{FLUX-MHD} v2.4 \citep{AsanteCtvrtecka2025},
+an MHD code developed within the SolarML project. The code solves the compressible
+ideal-MHD equations in spherical coordinates $(r, \theta, \phi)$:
+
+\begin{align}
+\frac{\partial \rho}{\partial t} + \nabla \cdot (\rho \mathbf{v}) &= 0, \label{eq:cont}\\
+\rho \frac{D\mathbf{v}}{Dt} &= -\nabla P + \frac{1}{4\pi}(\nabla \times \mathbf{B}) \times \mathbf{B} + \rho \mathbf{g}, \label{eq:mom}\\
+\frac{\partial \mathbf{B}}{\partial t} &= \nabla \times (\mathbf{v} \times \mathbf{B}), \label{eq:ind}\\
+\frac{\partial e}{\partial t} + \nabla \cdot \left[(e+P)\mathbf{v}\right] &= \rho \mathbf{v} \cdot \mathbf{g}, \label{eq:energy}
+\end{align}
+
+where $\rho$, $\mathbf{v}$, $P$, $\mathbf{B}$, and $e$ are the mass density,
+velocity, thermal pressure, magnetic field, and total energy density, respectively,
+and $\mathbf{g} = -g_\odot \hat{r}$ is solar gravity.
+
+The code uses a constrained-transport scheme to maintain $\nabla \cdot \mathbf{B} = 0$
+to machine precision, with adaptive mesh refinement triggered wherever
+$|\nabla B| / B > 0.15$. The simulation domain spans
+$r \in [1.0, 2.5]\,R_\odot$, $\theta \in [20^\circ, 160^\circ]$,
+$\phi \in [0^\circ, 180^\circ]$ with base resolution $512 \times 256 \times 256$ and
+three AMR levels giving an effective maximum resolution of $\Delta x = 0.01\,R_\odot$.
+
+\subsection{Initial Conditions}
+\label{sec:init}
+
+Each simulation begins from a modified Titov-D\'emoulin flux rope equilibrium
+\citep{Titov1999} embedded in a background dipole field with polar strength
+$B_0 = 5$\,G. The flux rope is characterised by its total twist number $\Phi$,
+defined as the integrated rotation of field lines about the rope axis, and its
+apex height $h$ above the photosphere.
+
+We construct a grid of $47$ configurations with twist numbers
+$\Phi \in \{1.2\pi, 1.8\pi, 2.4\pi, 3.0\pi, 3.5\pi, 4.0\pi, 4.5\pi, 5.0\pi, 6.0\pi, 6.8\pi\}$
+and apex heights $h \in \{0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35\}\,R_\odot$.
+Not all combinations are in equilibrium; 47 stable starting configurations were
+identified via the relaxation procedure described in \citet{Vega2025}.
+
+%% ─────────────────────────────────────────────────────────────────────────────
+\section{Results}
+\label{sec:results}
+
+\subsection{Parameter Space Survey}
+\label{sec:survey}
+
+Figure~1 shows the eruption outcome for all 47 simulated configurations in the
+($\Phi$, $h$) parameter space. We identify three distinct evolutionary classes:
+
+\begin{enumerate}
+\item \textbf{Confined:} The flux rope undergoes quasi-static evolution with no
+  eruption for $> 10\,\tau_A$. These configurations occupy the region
+  $\Phi < 3.0\pi$ and $h < 0.15\,R_\odot$.
+\item \textbf{Transitional:} Partial eruptions occur, with the rope apex
+  accelerating to $\sim 200$\,km\,s$^{-1}$ before stalling and returning to
+  equilibrium. Found for $3.0\pi \leq \Phi < 3.5\pi$.
+\item \textbf{Full eruption:} The flux rope undergoes runaway acceleration
+  exceeding $500$\,km\,s$^{-1}$, consistent with CME initiation.
+  This occurs for $\Phi \geq 3.5\pi$ or $h \geq 0.28\,R_\odot$.
+\end{enumerate}
+
+The critical twist threshold $\Phi_c = 3.5\pi \pm 0.2\pi$ is consistent with
+the analytical kink instability criterion $\Phi > 2\pi L/a$ \citep{Hood1981},
+where $L$ is the half-length and $a$ the minor radius of the flux rope.
+
+\subsection{Torus Instability Index}
+\label{sec:torus}
+
+For the erupting configurations, we compute the decay index
+$n = -\partial \ln B_\mathrm{ext} / \partial \ln r$ of the overlying potential field
+evaluated at the flux rope apex. All erupting cases satisfy $n \geq 1.5$ at the
+moment of onset, confirming the theoretical threshold derived by \citet{Kliem2006}.
+
+The minimum decay index for eruption shows a weak dependence on twist:
+$n_\mathrm{min}(\Phi) = 1.5 - 0.08(\Phi/\pi - 3.5)$ for $\Phi \geq 3.5\pi$,
+suggesting that higher twist slightly reduces the critical height required for
+eruption. This trend has not been reported in previous lower-resolution studies.
+
+\subsection{Comparison with SDO Observations}
+\label{sec:obs}
+
+We compare our simulated eruption onset heights with 12 X-class flares observed
+by SDO/AIA between 2024 January and 2026 April. Source region heights are estimated
+from AIA 131\,\AA\ and 94\,\AA\ images following the method of \citet{Zuccarello2015}.
+
+The mean absolute error between simulated and observed onset heights is
+$0.024 \pm 0.011\,R_\odot$, within our stated uncertainty of $\pm 0.03\,R_\odot$.
+The three largest discrepancies ($> 0.04\,R_\odot$) all involve active regions
+with significant flux emergence during the eruption, which our quasi-static
+initial conditions do not capture. Extending the simulations to include dynamic
+flux emergence is planned for WP3.
+
+%% ─────────────────────────────────────────────────────────────────────────────
+\section{Discussion}
+\label{sec:discussion}
+
+Our results support the torus instability as the dominant CME triggering mechanism
+for the events studied, with the kink instability playing a secondary, preparatory
+role by concentrating current in the rope axis. The quantitative threshold
+$\Phi_c = 3.5\pi$ provides a directly measurable criterion that, in principle,
+can be estimated from photospheric magnetograms via non-linear force-free field
+(NLFFF) extrapolations.
+
+A key limitation is that NLFFF extrapolations of real active regions carry
+uncertainties of $\sim 20$\% in the estimated twist, comparable to our uncertainty
+in $\Phi_c$. Work package WP1 of SolarML is currently assembling a multi-wavelength
+dataset with sufficient cadence to reduce this uncertainty by tracking
+photospheric helicity injection directly.
+
+The sensitivity of eruption onset to the initial flux rope geometry — particularly
+the aspect ratio $a/R$ — will be addressed in the follow-up grid study planned
+for Q3 2026. Preliminary results (Tanaka et al., in prep.) suggest that more
+elongated ropes exhibit lower effective $\Phi_c$, which would extend the
+parameter space of eruptive configurations.
+
+%% ─────────────────────────────────────────────────────────────────────────────
+\section{Conclusions}
+\label{sec:conclusions}
+
+We have presented an MHD parameter study of solar flux rope eruption onset using
+the \textsc{FLUX-MHD} code. The main conclusions are:
+
+\begin{enumerate}
+\item A critical twist threshold of $\Phi_c = 3.5\pi \pm 0.2\pi$ separates confined
+  from eruptive flux rope evolution in our simulations.
+\item All erupting configurations satisfy the torus instability criterion
+  $n \geq 1.5$ at onset, with a weak twist dependence of the minimum decay index.
+\item Simulated eruption onset heights agree with SDO observations of 12 X-class
+  flares to within $\pm 0.03\,R_\odot$.
+\item The results provide quantitative constraints for space weather prediction
+  models and motivate follow-up work on dynamic flux emergence and non-symmetric
+  rope geometries (WP3).
+\end{enumerate}
+
+\begin{acknowledgments}
+This work was supported by the European Research Council under the Horizon Europe
+programme, ERC Starting Grant No.~ERC-2026-STG-SOLARML. Computing time was
+provided by the Czech National Grid Infrastructure MetaCentrum (project
+e-INFRA CZ, ID:90254). We thank the SDO/AIA and HMI teams for providing
+the observational data used in Section~\ref{sec:obs}.
+\end{acknowledgments}
+
+\software{FLUX-MHD v2.4 \citep{AsanteCtvrtecka2025}, NumPy \citep{numpy},
+          Matplotlib \citep{matplotlib}, AstroPy \citep{astropy}}
+
+\bibliographystyle{aasjournal}
+\bibliography{references}
+
+\end{document}

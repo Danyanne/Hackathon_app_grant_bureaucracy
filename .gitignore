@@ -203,8 +203,19 @@ cython_debug/
 # Temporary file for partial code execution
 tempCodeRunnerFile.py
 
-# Credentials / secrets
+# Credentials / secrets — config.py is tracked intentionally (demo key)
 private_keys.json
+
+# Generated / runtime outputs
+chroma_db/
+data/worker_registry.json
+data/deadlines.json
+reports/
+logs/
+uagents_core.log
+
+# Upload artifacts with no extension (saved by orchestrator from ASI:One)
+knowledge_base/[a-z][a-z][a-z][a-z][a-z][a-z][a-z][a-z][a-z][a-z][a-z][a-z][a-z][a-z][a-z][a-z][a-z][a-z][a-z][a-z]
 
 # Ruff stuff:
 .ruff_cache/

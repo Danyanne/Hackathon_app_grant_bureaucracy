@@ -1,0 +1,101 @@
+Subject: Re: Re: Re: flux-scale grid results — ready to write up?
+Date: 2026-06-12
+Participants: Daniel Ctvrtecka, Marisol Vega, Kwame Asante, Yuki Tanaka
+
+---
+
+From: Marisol Vega <m.vega@institute.eu>
+Date: Thu, 11 Jun 2026 09:14:22 +0200
+To: Daniel Ctvrtecka <d.ctvrtecka@institute.eu>
+
+Daniel,
+
+Saw your commit yesterday — the 5-run grid looks clean. The pattern holding across all
+flux-scale variants is exactly what we needed to make the torus-instability argument
+convincing. I think this is now enough to write the methods + results sections.
+
+One thing before we go further: Kwame mentioned at the last meeting that the TD
+parameters were eye-matched rather than fitted. I'd strongly suggest we add at least
+a brief sensitivity test on the axial flux ±20% before submitting — otherwise a
+reviewer will ask. Can we fit this in before the ERC mid-year review (deadline: 15 July)?
+
+Also, Yuki — are you still planning to run the first comparison AR next week? If the
+pipeline generalises to a second region, that gives us a much stronger story.
+
+Marisol
+
+---
+
+From: Kwame Asante <k.asante@institute.eu>
+Date: Thu, 11 Jun 2026 11:52:07 +0200
+To: Daniel Ctvrtecka <d.ctvrtecka@institute.eu>; Marisol Vega <m.vega@institute.eu>; Yuki Tanaka <y.tanaka@institute.eu>
+
+All,
+
+Agree with Marisol — the grid results look solid. For the kink instability question: I
+checked the twist numbers across all five runs (see attached twist_check.csv), they're
+all comfortably below the Torok & Kliem (2004) threshold (Φ < 3.5π in every case), so
+we can confidently say the eruptions are torus-driven, not kink-driven. That should
+pre-empt one likely reviewer comment.
+
+On the DKIST proposal: I heard back from the TAC coordinator today. Our cycle-3 proposal
+has passed the technical review and is now in scientific review. Decision expected around
+10 July. If we get the time, it changes our Q3 plan significantly — we'd need 2-3 people
+on-site in Maui for the observing run (est. cost ~€8,000 travel + accommodation, would
+come from the ERC travel budget line).
+
+Action items I'm tracking:
+  1. Daniel: sensitivity test on TD axial flux (target: done by 5 July)
+  2. Yuki: first comparison AR run (target: done by 30 June)
+  3. Marisol: draft methods section outline (target: by 20 June)
+  4. All: circulate draft results section before ERC mid-year review (15 July deadline)
+
+Kwame
+
+---
+
+From: Yuki Tanaka <y.tanaka@institute.eu>
+Date: Fri, 12 Jun 2026 08:03:45 +0200
+To: Daniel Ctvrtecka <d.ctvrtecka@institute.eu>; Marisol Vega <m.vega@institute.eu>; Kwame Asante <k.asante@institute.eu>
+
+Hi all,
+
+Quick update: I started the comparison AR pipeline run on Tuesday — AR12673 (Sept 2017
+X9.3 flare, good data coverage). Initial relaxation looks stable, eruption run starts
+tonight. If it works I should have preliminary results by end of next week.
+
+One issue: the HMI data for AR12673 has a 2-hour gap on the day of the flare due to an
+SDO safe-mode event. I'll use the nearest available frame as the initial condition and
+flag it in the paper. Marisol — does that affect the photospheric flux calculation you
+were planning to do?
+
+Also, I noticed the HPC allocation is getting eaten faster than expected (we're at ~410k
+of 1.2M core-hours as of today). The comparison AR sample might push us close to the
+limit if we run all 15 ARs. Should we prioritise the 5 highest-confidence cases first
+and request a supplemental allocation if needed?
+
+Yuki
+
+---
+
+From: Daniel Ctvrtecka <d.ctvrtecka@institute.eu>
+Date: Fri, 12 Jun 2026 10:30:00 +0200
+To: Marisol Vega <m.vega@institute.eu>; Kwame Asante <k.asante@institute.eu>; Yuki Tanaka <y.tanaka@institute.eu>
+
+All,
+
+Good progress. Confirmed I'll have the sensitivity test done by 5 July — will run ±20%
+and ±40% variants on axial flux (4 additional runs). Results will go into
+results/tables/sensitivity_summary.csv.
+
+On HPC: Yuki is right to flag this. Let's plan for the 5 priority ARs first. I'll put
+together a revised allocation estimate and send it around before the mid-year review.
+If we need a supplemental request, ERC does allow re-budgeting from personnel to
+compute (up to 10% of staff budget per the grant T&C) — worth checking with finance
+if we get close.
+
+One admin note: the ERC financial report for H1 2026 is due 31 July. Finance needs
+all receipts submitted by 20 July. Please make sure any pending expenses (conference
+registrations, travel reimbursements) are submitted by then.
+
+Daniel

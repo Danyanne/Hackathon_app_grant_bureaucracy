@@ -1,0 +1,75 @@
+version: "3.9"
+
+services:
+  orchestrator:
+    build: .
+    command: python3 agents/orchestrator.py
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./chroma_db:/app/chroma_db
+      - ./logs:/app/logs
+      - ./reports:/app/reports
+      - ./lab_notes:/app/lab_notes
+      - ./emails:/app/emails
+      - ./papers:/app/papers
+    restart: unless-stopped
+
+  compliance:
+    build: .
+    command: python3 agents/compliance_rag.py
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./chroma_db:/app/chroma_db
+      - ./logs:/app/logs
+    restart: unless-stopped
+
+  data_worker:
+    build: .
+    command: python3 agents/data_worker.py
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./data:/app/data
+      - ./knowledge_base:/app/knowledge_base
+      - ./logs:/app/logs
+    restart: unless-stopped
+
+  report_writer:
+    build: .
+    command: python3 agents/report_writer.py
+    ports:
+      - "8004:8004"
+    volumes:
+      - ./data:/app/data
+      - ./lab_notes:/app/lab_notes
+      - ./emails:/app/emails
+      - ./papers:/app/papers
+      - ./reports:/app/reports
+      - ./logs:/app/logs
+    restart: unless-stopped
+
+  email_drafter:
+    build: .
+    command: python3 agents/email_drafter.py
+    ports:
+      - "8005:8005"
+    volumes:
+      - ./data:/app/data
+      - ./knowledge_base:/app/knowledge_base
+      - ./logs:/app/logs
+    restart: unless-stopped
+
+  budget_forecaster:
+    build: .
+    command: python3 agents/budget_forecaster.py
+    ports:
+      - "8006:8006"
+    volumes:
+      - ./data:/app/data
+      - ./knowledge_base:/app/knowledge_base
+      - ./lab_notes:/app/lab_notes
+      - ./logs:/app/logs
+    restart: unless-stopped

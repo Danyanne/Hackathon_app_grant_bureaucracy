@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# run_swarm.sh — Start the full 6-agent swarm and fire a test query.
 set -e
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -10,52 +11,70 @@ LOG_DIR="$PROJECT_ROOT/logs"
 mkdir -p "$LOG_DIR"
 
 agent_pids=()
-tail_pids=()
 
 cleanup() {
     echo ""
-    echo "Shutting down all agents..."
+    echo "Shutting down agents..."
     for pid in "${agent_pids[@]}"; do
-        kill "$pid" 2>/dev/null || true
-    done
-    for pid in "${tail_pids[@]}"; do
         kill "$pid" 2>/dev/null || true
     done
 }
 trap cleanup EXIT INT TERM
 
-# Kill any stale instances from previous runs
-pkill -f "python3.*agents/orchestrator.py"   2>/dev/null || true
-pkill -f "python3.*agents/compliance_rag.py" 2>/dev/null || true
-pkill -f "python3.*agents/data_worker.py"    2>/dev/null || true
-pkill -f "python3.*agents/trigger_swarm.py"  2>/dev/null || true
+# Kill any stale instances
+pkill -f "python3.*agents/orchestrator.py"      2>/dev/null || true
+pkill -f "python3.*agents/compliance_rag.py"    2>/dev/null || true
+pkill -f "python3.*agents/data_worker.py"       2>/dev/null || true
+pkill -f "python3.*agents/report_writer.py"     2>/dev/null || true
+pkill -f "python3.*agents/email_drafter.py"     2>/dev/null || true
+pkill -f "python3.*agents/budget_forecaster.py" 2>/dev/null || true
+pkill -f "python3.*agents/trigger_swarm.py"     2>/dev/null || true
 sleep 1
 
-# Launch an agent in background and tail its log live with a prefix
-start_agent() {
-    local name="$1"
-    local script="$2"
-    local log="$LOG_DIR/$name.log"
+python3 -u agents/orchestrator.py      > "$LOG_DIR/orchestrator.log"      2>&1 & agent_pids+=($!)
+python3 -u agents/compliance_rag.py    > "$LOG_DIR/compliance.log"         2>&1 & agent_pids+=($!)
+python3 -u agents/data_worker.py       > "$LOG_DIR/data_worker.log"        2>&1 & agent_pids+=($!)
+python3 -u agents/report_writer.py     > "$LOG_DIR/report_writer.log"      2>&1 & agent_pids+=($!)
+python3 -u agents/email_drafter.py     > "$LOG_DIR/email_drafter.log"      2>&1 & agent_pids+=($!)
+python3 -u agents/budget_forecaster.py > "$LOG_DIR/budget_forecaster.log"  2>&1 & agent_pids+=($!)
 
-    python3 -u "agents/$script" > "$log" 2>&1 &
-    agent_pids+=($!)
+AGENTS=(orchestrator compliance data_worker report_writer email_drafter budget_forecaster)
+declare -A LOG_MAP=(
+    [orchestrator]="orchestrator.log"
+    [compliance]="compliance.log"
+    [data_worker]="data_worker.log"
+    [report_writer]="report_writer.log"
+    [email_drafter]="email_drafter.log"
+    [budget_forecaster]="budget_forecaster.log"
+)
 
-    # Stream log lines to terminal with agent name prefix
-    tail -n 0 -F "$log" 2>/dev/null | sed -u "s/^/[${name}] /" &
-    tail_pids+=($!)
-}
+declare -A SEEN
+READY=0
+TIMEOUT=40
+ELAPSED=0
 
-echo "Starting agents..."
-start_agent "orchestrator"   "orchestrator.py"
-start_agent "compliance"     "compliance_rag.py"
-start_agent "data_worker"    "data_worker.py"
+echo "Starting 6-agent swarm..."
 
-echo "Waiting for agents to register on Almanac (10s)..."
-sleep 10
+while [ $ELAPSED -lt $TIMEOUT ] && [ $READY -lt 6 ]; do
+    sleep 1
+    ELAPSED=$((ELAPSED + 1))
+    for agent in "${AGENTS[@]}"; do
+        [ -n "${SEEN[$agent]}" ] && continue
+        log="$LOG_DIR/${LOG_MAP[$agent]}"
+        if grep -q "Agent registration status updated to active\|Starting mailbox client" "$log" 2>/dev/null; then
+            echo "  ✓  $agent online"
+            SEEN[$agent]=1
+            READY=$((READY + 1))
+        elif grep -q "^ERROR\|address already in use" "$log" 2>/dev/null; then
+            echo "  ✗  $agent failed — check logs/${LOG_MAP[$agent]}"
+            SEEN[$agent]=1
+        fi
+    done
+done
 
-echo "Firing trigger..."
 echo ""
-start_agent "trigger" "trigger_swarm.py"
+[ $READY -lt 6 ] && echo "  ⚠  Only $READY/6 agents came online within ${TIMEOUT}s — check logs/"
 
-# Keep script alive until Ctrl+C
-wait
+echo "Firing test query..."
+python3 -u agents/trigger_swarm.py > "$LOG_DIR/trigger.log" 2>&1
+echo "Done. Check logs/orchestrator.log for the response."

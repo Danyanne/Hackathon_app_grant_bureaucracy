@@ -1,14 +1,25 @@
-import os
+"""
+data_ingestor.py — One-time setup script.
+
+Reads every PDF from knowledge_base/, splits each page into overlapping text
+chunks, embeds them with the all-MiniLM-L6-v2 sentence-transformer, and
+persists the result to chroma_db/.
+
+Run this whenever policy documents are added or updated:
+    python3 data_ingestor.py
+
+The resulting ChromaDB directory is used at runtime by:
+    - agents/compliance_rag.py  (uAgents swarm)
+    - streamlit_app.py          (web UI, via get_vector_db())
+"""
 from langchain_community.document_loaders import PyPDFDirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_chroma import Chroma # Note: Updated import for newer LangChain versions
+from langchain_chroma import Chroma
+from config import KNOWLEDGE_BASE, CHROMA_DB
 
-# --- BULLETPROOF PATH RESOLUTION ---
-# This forces Python to find the directory exactly where this script lives.
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-KNOWLEDGE_BASE_DIR = os.path.join(SCRIPT_DIR, "knowledge_base")
-DB_DIR = os.path.join(SCRIPT_DIR, "chroma_db")
+KNOWLEDGE_BASE_DIR = str(KNOWLEDGE_BASE)
+DB_DIR             = str(CHROMA_DB)
 
 def ingest_documents():
     print(f"[*] Scanning absolute directory: {KNOWLEDGE_BASE_DIR}...")
