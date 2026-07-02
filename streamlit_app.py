@@ -127,15 +127,15 @@ def analyze_intent(text: str) -> list[str]:
 
     try:
         llm   = get_llm()
-        reply = llm.chat.completions.create(
+        reply = (llm.chat.completions.create(
             model=VENICE_MODEL,
-            max_tokens=32,
+            max_tokens=1000,
             temperature=0,
             messages=[
                 {"role": "system", "content": prompt},
                 {"role": "user",   "content": text},
             ],
-        ).choices[0].message.content.strip().lower()
+        ).choices[0].message.content or "").strip().lower()
     except Exception:
         return []   # routing failure → generic fallback in dispatch()
 
@@ -221,17 +221,17 @@ def run_data_worker(query: str) -> str:
         llm    = get_llm()
         result = llm.chat.completions.create(
             model=VENICE_MODEL,
-            max_tokens=512,
+            max_tokens=1000,
             messages=[
                 {"role": "system", "content": (
                     "You are a data analyst. Answer the user's question based solely on the "
                     "expense records below. Be specific and reference exact values.\n\n"
-                    f"EXPENSE RECORDS:\n{data_str}"
+                    f"EXPENSE RECORDS:\n{data_str[:4000]}"
                 )},
                 {"role": "user", "content": query},
             ],
         )
-        return result.choices[0].message.content
+        return (result.choices[0].message.content or "⚠️ No response from data worker.").strip()
     except Exception as e:
         return f"⚠️ Data worker error: {e}"
 
@@ -430,7 +430,7 @@ def run_budget_forecaster(query: str) -> str:
         llm = get_llm()
         result = llm.chat.completions.create(
             model=VENICE_MODEL,
-            max_tokens=900,
+            max_tokens=2000,
             messages=[
                 {"role": "system", "content": (
                     "You are a financial analyst embedded in a scientific research team. "
@@ -448,12 +448,12 @@ def run_budget_forecaster(query: str) -> str:
                     "include it as a forecast item with a rough cost estimate if possible.\n\n"
                     f"GRANT DETAILS:\n{grant_ctx}\n\n"
                     f"EXPENSE HISTORY:\n{expense_summary}\n\n"
-                    f"LAB NOTES:\n{lab_notes[:3000]}"
+                    f"LAB NOTES:\n{lab_notes[:2000]}"
                 )},
                 {"role": "user", "content": query},
             ],
-        ).choices[0].message.content.strip()
-        return result
+        )
+        return (result.choices[0].message.content or "⚠️ No response from budget forecaster.").strip()
     except Exception as e:
         return f"⚠️ Budget forecaster error: {e}"
 
@@ -663,9 +663,9 @@ def dispatch(query: str) -> tuple[str, list[str], dict | None]:
         comp_answer = run_compliance(enriched)
         try:
             llm = get_llm()
-            synthesis = llm.chat.completions.create(
+            synthesis = (llm.chat.completions.create(
                 model=VENICE_MODEL,
-                max_tokens=600,
+                max_tokens=1200,
                 messages=[
                     {"role": "system", "content": (
                         "You are a grant management assistant helping a scientist. "
@@ -681,7 +681,7 @@ def dispatch(query: str) -> tuple[str, list[str], dict | None]:
                         f"Compliance / policy analysis:\n{comp_answer}"
                     )},
                 ],
-            ).choices[0].message.content.strip()
+            ).choices[0].message.content or "").strip()
         except Exception:
             # Synthesis failed — fall back to showing both answers
             synthesis = f"{data_answer}\n\n---\n\n{comp_answer}"
@@ -704,7 +704,7 @@ def dispatch(query: str) -> tuple[str, list[str], dict | None]:
         llm = get_llm()
         reply = llm.chat.completions.create(
             model=VENICE_MODEL,
-            max_tokens=512,
+            max_tokens=1000,
             messages=[
                 {"role": "system", "content": (
                     "You are a friendly assistant for a research scientist managing an ERC grant. "
@@ -715,7 +715,7 @@ def dispatch(query: str) -> tuple[str, list[str], dict | None]:
                 {"role": "user", "content": query},
             ],
         )
-        return reply.choices[0].message.content.strip(), [], None
+        return (reply.choices[0].message.content or "I'm here to help with your grant. What would you like to know?").strip(), [], None
     except Exception as e:
         return f"⚠️ Could not reach the AI backend: {e}", [], None
 

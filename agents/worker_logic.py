@@ -138,11 +138,11 @@ def fetch_github_activity() -> str:
 # ── Report generation ─────────────────────────────────────────────────────────
 
 _TRUNC = {
-    "template":        3_000,
-    "lab_notes":       4_000,
-    "emails":          2_000,
-    "github_activity": 2_000,
-    "papers":          1_500,
+    "template":        1_500,
+    "lab_notes":       1_500,
+    "emails":            800,
+    "github_activity": 1_200,
+    "papers":            600,
 }
 
 
@@ -166,15 +166,13 @@ def generate_report_response(query: str) -> tuple[str, str | None]:
     papers_block = f"\n\nPAPERS / DRAFTS:\n{_t(papers, 'papers')}" if papers else ""
 
     if is_full_report:
-        template = _t(load_template(), "template")
         system_prompt = (
             "You are an experienced scientific grant report writer. "
-            "Produce a structured progress report that follows the provided template exactly. "
-            "Base the content on the lab notes, email threads, GitHub activity, and any paper drafts below. "
-            "Be specific — cite actual experiments, results, decisions from emails, and commit messages. "
-            "Maintain a professional academic tone appropriate for an ERC report. "
-            "Fill every section; write 'N/A for this period' only when genuinely nothing applies.\n\n"
-            f"REPORT TEMPLATE:\n{template}\n\n"
+            "Write a structured ERC progress report with these sections: "
+            "1. Scientific Progress, 2. Personnel, 3. Budget Status, "
+            "4. Upcoming Milestones, 5. Risks & Deviations. "
+            "Be specific — cite actual experiments, commits, and results from the data below. "
+            "Professional academic tone. Keep each section concise but substantive.\n\n"
             f"LAB NOTES:\n{lab_notes}\n\n"
             f"EMAIL THREADS:\n{emails}\n\n"
             f"GITHUB ACTIVITY:\n{github_activity}"
@@ -182,18 +180,18 @@ def generate_report_response(query: str) -> tuple[str, str | None]:
         )
         _r = llm.chat.completions.create(
             model=VENICE_MODEL,
-            max_tokens=3000,
+            max_tokens=4000,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user",   "content": query},
             ],
         )
-        finish = (_r.choices[0].finish_reason or "unknown") if _r.choices else "no_choices"
         report_text = (_r.choices[0].message.content or "").strip() if _r.choices else ""
         if not report_text:
+            finish = (_r.choices[0].finish_reason or "unknown") if _r.choices else "no_choices"
             raise RuntimeError(
                 f"LLM returned empty content (finish_reason={finish}). "
-                "The Venice API may be under load — please retry in a moment."
+                "The context may be too large — try a shorter query or retry."
             )
         reports_dir = PROJECT_ROOT / "reports"
         reports_dir.mkdir(exist_ok=True)
