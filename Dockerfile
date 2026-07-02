@@ -1,3 +1,5 @@
+# prepared for Oracle Cloud deployment after the hackathon
+
 FROM python:3.12-slim
 
 WORKDIR /app

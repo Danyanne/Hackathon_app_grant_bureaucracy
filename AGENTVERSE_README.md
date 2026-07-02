@@ -69,20 +69,7 @@ Your intelligent companion for managing ERC grant bureaucracy! Ask anything abou
 
 🔍 Consulting Compliance Oracle…
 
-✅ **Student assistant costs are eligible under ERC rules**, provided they meet the following conditions from the Grant Agreement (Art. 6 — Eligible Costs):Failed11:19
-Summary
-
-The agent's final response is incomplete and truncated mid-word, cutting off after calculating €27,000 for the postdoc cost without finishing the personnel comparison. This is a technical/formatting error that renders the response broken and unhelpful.
-Issue Type
-
-Technical error
-Suggested Fixes
-
-    Investigate the Budget Forecaster tool's string handling to fix the 'NoneType' object has no attribute 'strip' error.
-    Ensure the final response generation properly captures and formats the full output without truncation.
-    Add validation in the forecaster to return a complete message even if partial data is missing.
-    Test the pipeline end-to-end to confirm all calculation steps complete successfully before returning to the user.
-
+✅ **Student assistant costs are eligible under ERC rules**, provided they meet the following conditions from the Grant Agreement (Art. 6 — Eligible Costs):
 
 - The cost must be an **actual cost incurred** and supported by a contract or payroll record
 - The rate must be **consistent with your institution's usual practices** for equivalent roles

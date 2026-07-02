@@ -14,6 +14,7 @@ import json
 from datetime import datetime
 from openai import OpenAI
 from uagents import Agent, Context
+import pandas as _pd
 
 from models import TaskRequest, WorkerResponse
 from config import (
@@ -78,6 +79,50 @@ def _grant_context() -> str:
         return f"(Grant context error: {e})"
 
 
+def _compute_forecast_fallback() -> str:
+    """Pure-Python budget summary — used when the LLM call fails or returns empty."""
+    xls = KNOWLEDGE_BASE / "erc_solar_physics_expenses.xlsx"
+    try:
+        grants = json.loads(GRANTS_FILE.read_text(encoding="utf-8")).get("grants", []) if GRANTS_FILE.exists() else []
+        budget = grants[0].get("total_budget_eur", 0) if grants else 0
+        end_date_str = grants[0].get("end_date", "") if grants else ""
+
+        df = _pd.read_excel(xls) if xls.exists() else _pd.DataFrame()
+        total_spent = float(df["Amount_EUR"].sum()) if "Amount_EUR" in df.columns else 0.0
+        remaining = budget - total_spent
+
+        lines = ["📊 **Budget Summary (computed directly from records)**\n"]
+        if budget:
+            lines.append(f"- Total budget: EUR {budget:,.0f}")
+        lines.append(f"- Spent to date: EUR {total_spent:,.0f}")
+        if budget:
+            pct = total_spent / budget * 100
+            lines.append(f"- Remaining: EUR {remaining:,.0f} ({100 - pct:.1f}%)")
+
+        if "Category" in df.columns and not df.empty:
+            lines.append("\nBy category:")
+            for cat, amt in df.groupby("Category")["Amount_EUR"].sum().sort_values(ascending=False).items():
+                lines.append(f"  • {cat}: EUR {amt:,.0f}")
+
+        if "Date" in df.columns and not df.empty:
+            df["_m"] = _pd.to_datetime(df["Date"], errors="coerce").dt.to_period("M")
+            monthly = df.groupby("_m")["Amount_EUR"].sum().sort_index()
+            if len(monthly) >= 2:
+                avg_monthly = float(monthly.mean())
+                lines.append(f"\n- Avg monthly burn rate: EUR {avg_monthly:,.0f}")
+                if end_date_str:
+                    months_left = max((datetime.strptime(end_date_str, "%Y-%m-%d") - datetime.today()).days / 30, 0)
+                    projected = total_spent + avg_monthly * months_left
+                    lines.append(f"- Projected total spend: EUR {projected:,.0f}")
+                    if budget:
+                        status = "✅ On track" if projected <= budget else "⚠️ Over budget"
+                        lines.append(f"- Assessment: {status}")
+
+        return "\n".join(lines)
+    except Exception as e:
+        return f"Could not compute budget summary: {e}"
+
+
 def _lab_notes() -> str:
     lab_dir = PROJECT_ROOT / "lab_notes"
     if not lab_dir.exists():
@@ -118,9 +163,11 @@ async def handle_forecast_request(ctx: Context, sender: str, msg: TaskRequest):
         )
         result = (resp.choices[0].message.content or "").strip()
         if not result:
-            result = "⚠️ Budget forecaster returned an empty response. Please try again."
+            ctx.logger.warning("[budget_forecaster] LLM returned empty — using computed fallback")
+            result = _compute_forecast_fallback()
     except Exception as e:
-        result = f"⚠️ Budget forecaster error: {e}"
+        ctx.logger.warning(f"[budget_forecaster] LLM error ({e}) — using computed fallback")
+        result = _compute_forecast_fallback()
 
     await ctx.send(sender, WorkerResponse(request_id=msg.id, data=result))
 

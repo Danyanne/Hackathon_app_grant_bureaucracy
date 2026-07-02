@@ -1,22 +1,26 @@
 """
 config.py — Central configuration for the Grant Bureaucracy Assistant.
 
-This is the single file to edit when credentials or settings change.
+Secrets are loaded from .env (gitignored). Copy .env.example → .env and fill in values.
 All other modules import from here; nothing is hardcoded elsewhere.
 """
+import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+load_dotenv(Path(__file__).resolve().parent / ".env")
+
 # ── Venice AI ─────────────────────────────────────────────────────────────────
-# Inference key from venice.ai — used by all agents and the Streamlit UI.
-VENICE_API_KEY  = "VENICE_INFERENCE_KEY_-ZMGJZ9LK-Gnw-yh-BCecTz6UVBRzGkkrLx6npnF7K"
+VENICE_API_KEY  = os.environ.get("VENICE_API_KEY", "")
 VENICE_BASE_URL = "https://api.venice.ai/api/v1"
 VENICE_MODEL    = "claude-sonnet-5"
 
 # ── GitHub ────────────────────────────────────────────────────────────────────
-# Used by the report writer (commits, issues, lab notebook) and build_registry.
 # Set GITHUB_TOKEN to "" for public repos.
-GITHUB_REPO  = "Danyanne/test_for_hackathon_mock_scientific_repo"
-GITHUB_TOKEN = "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"
+GITHUB_REPO  = os.environ.get(
+    "GITHUB_REPO", "Danyanne/test_for_hackathon_mock_scientific_repo"
+)
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 
 # ── Project paths ─────────────────────────────────────────────────────────────
 PROJECT_ROOT   = Path(__file__).resolve().parent

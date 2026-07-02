@@ -33,6 +33,7 @@ async def handle_report_request(ctx: Context, sender: str, msg: TaskRequest):
             response = f"✅ Report saved to `{rel}`\n\n---\n\n{report_text}"
         else:
             response = report_text
+        response = response or "⚠️ Report generation returned no content. Please try again."
     except Exception as e:
         response = f"⚠️ Report writer error: {e}"
 

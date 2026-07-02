@@ -137,22 +137,36 @@ def fetch_github_activity() -> str:
 
 # ── Report generation ─────────────────────────────────────────────────────────
 
+_TRUNC = {
+    "template":        3_000,
+    "lab_notes":       4_000,
+    "emails":          2_000,
+    "github_activity": 2_000,
+    "papers":          1_500,
+}
+
+
+def _t(text: str, key: str) -> str:
+    limit = _TRUNC[key]
+    return text[:limit] + "\n…[truncated]" if len(text) > limit else text
+
+
 def generate_report_response(query: str) -> tuple[str, str | None]:
     """
     Returns (chat_response, saved_path_or_None).
-    Full report  → saves .md, returns (confirmation message, path).
+    Full report  → saves .md, returns (text, path).
     Quick query  → returns (LLM answer, None).
     """
-    lab_notes       = load_lab_notes()
-    emails          = load_emails()
-    github_activity = fetch_github_activity()
+    lab_notes       = _t(load_lab_notes(),       "lab_notes")
+    emails          = _t(load_emails(),           "emails")
+    github_activity = _t(fetch_github_activity(), "github_activity")
     papers          = load_papers()
     is_full_report  = any(k in query.lower() for k in REPORT_KEYWORDS)
 
-    papers_block = f"\n\nPAPERS / DRAFTS (LaTeX source from Overleaf):\n{papers}" if papers else ""
+    papers_block = f"\n\nPAPERS / DRAFTS:\n{_t(papers, 'papers')}" if papers else ""
 
     if is_full_report:
-        template = load_template()
+        template = _t(load_template(), "template")
         system_prompt = (
             "You are an experienced scientific grant report writer. "
             "Produce a structured progress report that follows the provided template exactly. "
@@ -166,7 +180,7 @@ def generate_report_response(query: str) -> tuple[str, str | None]:
             f"GITHUB ACTIVITY:\n{github_activity}"
             f"{papers_block}"
         )
-        result = llm.chat.completions.create(
+        _r = llm.chat.completions.create(
             model=VENICE_MODEL,
             max_tokens=3000,
             messages=[
@@ -174,7 +188,13 @@ def generate_report_response(query: str) -> tuple[str, str | None]:
                 {"role": "user",   "content": query},
             ],
         )
-        report_text = result.choices[0].message.content
+        finish = (_r.choices[0].finish_reason or "unknown") if _r.choices else "no_choices"
+        report_text = (_r.choices[0].message.content or "").strip() if _r.choices else ""
+        if not report_text:
+            raise RuntimeError(
+                f"LLM returned empty content (finish_reason={finish}). "
+                "The Venice API may be under load — please retry in a moment."
+            )
         reports_dir = PROJECT_ROOT / "reports"
         reports_dir.mkdir(exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -183,7 +203,7 @@ def generate_report_response(query: str) -> tuple[str, str | None]:
         return report_text, str(out_path)
 
     else:
-        result = llm.chat.completions.create(
+        _r = llm.chat.completions.create(
             model=VENICE_MODEL,
             max_tokens=512,
             messages=[
@@ -199,4 +219,5 @@ def generate_report_response(query: str) -> tuple[str, str | None]:
                 {"role": "user", "content": query},
             ],
         )
-        return result.choices[0].message.content, None
+        text = (_r.choices[0].message.content or "").strip() if _r.choices else ""
+        return text or "⚠️ No response generated.", None
